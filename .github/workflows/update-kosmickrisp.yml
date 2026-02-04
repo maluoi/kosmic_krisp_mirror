@@ -1,0 +1,95 @@
+name: Update KosmicKrisp
+
+on:
+  schedule:
+    # Run every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Need full history for tags
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full
+
+      - name: Get latest SDK version
+        id: get-version
+        run: |
+          LATEST_VERSION=$(./download_kosmickrisp.sh --version-only)
+          echo "latest=$LATEST_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Latest SDK version: $LATEST_VERSION"
+
+      - name: Get latest tag
+        id: get-tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
+          echo "current=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "Current tag: $LATEST_TAG"
+
+      - name: Check if update needed
+        id: check-update
+        run: |
+          LATEST="${{ steps.get-version.outputs.latest }}"
+          CURRENT="${{ steps.get-tag.outputs.current }}"
+
+          if [[ "$CURRENT" == "none" ]] || [[ "$CURRENT" != "$LATEST" ]]; then
+            echo "needs_update=true" >> "$GITHUB_OUTPUT"
+            echo "Update needed: $CURRENT -> $LATEST"
+          else
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+            echo "Already up to date: $CURRENT"
+          fi
+
+      - name: Download KosmicKrisp
+        if: steps.check-update.outputs.needs_update == 'true'
+        run: |
+          mkdir -p artifacts
+          ./download_kosmickrisp.sh ./artifacts
+
+      - name: Update README
+        if: steps.check-update.outputs.needs_update == 'true'
+        run: |
+          VERSION="${{ steps.get-version.outputs.latest }}"
+          sed "s/\${VK_VERSION}/$VERSION/g" README.template.md > README.md
+
+      - name: Commit and tag
+        if: steps.check-update.outputs.needs_update == 'true'
+        run: |
+          VERSION="${{ steps.get-version.outputs.latest }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+          git commit -m "Update to KosmicKrisp $VERSION"
+          git tag "$VERSION"
+          git push origin main --tags
+
+      - name: Create release
+        if: steps.check-update.outputs.needs_update == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get-version.outputs.latest }}
+          name: KosmicKrisp ${{ steps.get-version.outputs.latest }}
+          body: |
+            Automated release of KosmicKrisp from the LunarG Vulkan SDK.
+
+            **Version:** ${{ steps.get-version.outputs.latest }}
+
+            ## Files
+            - `libvulkan_kosmickrisp.dylib` - The Vulkan driver for Apple Silicon
+            - `libkosmickrisp_icd.json` - ICD manifest
+            - `LICENSE.txt` - License terms
+          files: |
+            artifacts/libvulkan_kosmickrisp.dylib
+            artifacts/libkosmickrisp_icd.json
+            artifacts/LICENSE.txt
