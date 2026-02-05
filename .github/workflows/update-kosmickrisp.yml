@@ -5,6 +5,11 @@ on:
     # Run every Monday at 00:00 UTC
     - cron: '0 0 * * 1'
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force release even if version exists'
+        type: boolean
+        default: false
 
 jobs:
   check-and-release:
@@ -41,7 +46,7 @@ jobs:
           LATEST="${{ steps.get-version.outputs.latest }}"
           CURRENT="${{ steps.get-tag.outputs.current }}"
 
-          if [[ "$CURRENT" == "none" ]] || [[ "$CURRENT" != "$LATEST" ]]; then
+          if [[ "$CURRENT" == "none" ]] || [[ "$CURRENT" != "$LATEST" ]] || [[ "${{ inputs.force }}" == "true" ]]; then
             echo "needs_update=true" >> "$GITHUB_OUTPUT"
             echo "Update needed: $CURRENT -> $LATEST"
           else
@@ -77,9 +82,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add README.md
-          git commit -m "Update to KosmicKrisp $VERSION"
-          git tag "$VERSION"
-          git push origin main --tags
+          if ! git diff --cached --quiet; then
+            git commit -m "Update to KosmicKrisp $VERSION"
+          fi
+          git tag -f "$VERSION"
+          git push origin main --tags --force
 
       - name: Create release
         if: steps.check-update.outputs.needs_update == 'true'
