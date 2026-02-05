@@ -63,9 +63,8 @@ jobs:
       - name: Create archive
         if: steps.check-update.outputs.needs_update == 'true'
         run: |
-          VERSION="${{ steps.get-version.outputs.latest }}"
           cd artifacts
-          zip "kosmickrisp-${VERSION}.zip" libvulkan_kosmickrisp.dylib libkosmickrisp_icd.json LICENSE.txt
+          zip kosmickrisp.zip libvulkan_kosmickrisp.dylib libkosmickrisp_icd.json LICENSE.txt
 
       - name: Update README
         if: steps.check-update.outputs.needs_update == 'true'
@@ -103,4 +102,4 @@ jobs:
             - `libvulkan_kosmickrisp.dylib` - The Vulkan driver for Apple Silicon
             - `libkosmickrisp_icd.json` - ICD manifest
             - `LICENSE.txt` - License terms
-          files: artifacts/kosmickrisp-${{ steps.get-version.outputs.latest }}.zip
+          files: artifacts/kosmickrisp.zip
