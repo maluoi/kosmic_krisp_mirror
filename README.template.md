@@ -18,17 +18,16 @@ Each release includes:
 If you use cmake, you can integrate this into your project something like this:
 
 ```cmake
-if(APPLE)
+if (APPLE)
 	message(STATUS "Fetching KosmicKrisp...")
 	FetchContent_Declare(kosmickrisp
 		URL https://github.com/maluoi/kosmic_krisp_mirror/releases/download/${VK_VERSION}/kosmickrisp.zip
-	)
+		DOWNLOAD_EXTRACT_TIMESTAMP TRUE )
 	FetchContent_MakeAvailable(kosmickrisp)
 
-	add_library(kosmickrisp SHARED IMPORTED GLOBAL)
+	add_library          (kosmickrisp SHARED IMPORTED GLOBAL)
 	set_target_properties(kosmickrisp PROPERTIES
-		IMPORTED_LOCATION "${kosmickrisp_SOURCE_DIR}/libvulkan_kosmickrisp.dylib"
-	)
+		IMPORTED_LOCATION "${kosmickrisp_SOURCE_DIR}/libvulkan_kosmickrisp.dylib" )
 	message(STATUS "KosmicKrisp: ${kosmickrisp_SOURCE_DIR}/libvulkan_kosmickrisp.dylib")
 
 	target_link_libraries(your_project PRIVATE kosmickrisp)
