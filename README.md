@@ -1,6 +1,6 @@
 # KosmicKrisp macOS Vulkan Driver
 
-**Current Version:** 1.4.341.0
+**Current Version:** 1.4.341.1
 
 Pre-built `libvulkan_kosmickrisp.dylib` automatically extracted from the [LunarG Vulkan SDK](https://vulkan.lunarg.com/).
 
@@ -21,7 +21,7 @@ If you use cmake, you can integrate this into your project something like this:
 if (APPLE)
 	message(STATUS "Fetching KosmicKrisp...")
 	FetchContent_Declare(kosmickrisp
-		URL https://github.com/maluoi/kosmic_krisp_mirror/releases/download/1.4.341.0/kosmickrisp.zip
+		URL https://github.com/maluoi/kosmic_krisp_mirror/releases/download/1.4.341.1/kosmickrisp.zip
 		DOWNLOAD_EXTRACT_TIMESTAMP TRUE )
 	FetchContent_MakeAvailable(kosmickrisp)
 
